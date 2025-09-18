@@ -1,0 +1,45 @@
+.enhanced-storage-browser {
+  display: flex;
+  height: 100vh;
+  background: #f8f9fa;
+}
+
+.browser-section {
+  transition: flex 0.3s ease;
+  min-width: 300px;
+  background: white;
+  border-right: 1px solid #dee2e6;
+}
+
+.browser-section.full-width {
+  flex: 1;
+}
+
+.browser-section.with-viewer {
+  flex: 1;
+  max-width: 50%;
+}
+
+.viewer-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 400px;
+}
+
+@media (max-width: 768px) {
+  .enhanced-storage-browser {
+    flex-direction: column;
+  }
+  
+  .browser-section.with-viewer {
+    max-width: none;
+    flex: none;
+    height: 50vh;
+  }
+  
+  .viewer-section {
+    min-width: auto;
+    height: 50vh;
+  }
+}
