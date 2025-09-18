@@ -22,7 +22,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ fileUrl, fileType, fileName, on
           setFileContent(content);
           setLoading(false);
         })
-        .catch(err => {
+        .catch(() => {
           setError('Failed to load file content');
           setLoading(false);
         });
