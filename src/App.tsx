@@ -1,29 +1,17 @@
-import React, { useState } from 'react';
 import { Amplify } from 'aws-amplify';
-import { StorageBrowser } from '@aws-amplify/ui-react-storage';
 import { Authenticator } from '@aws-amplify/ui-react';
-import JsonViewer from './components/JsonViewer';
+import { createAmplifyAuthAdapter, createStorageBrowser } from '@aws-amplify/ui-react-storage/browser';
 import outputs from '../amplify_outputs.json';
 import '@aws-amplify/ui-react/styles.css';
-import '@aws-amplify/ui-react-storage/storage-browser-styles.css';
+import '@aws-amplify/ui-react-storage/styles.css';
 
 Amplify.configure(outputs);
 
+const { StorageBrowser } = createStorageBrowser({
+  config: createAmplifyAuthAdapter(),
+});
+
 function App() {
-  const [selectedJsonFile, setSelectedJsonFile] = useState<{
-    path: string;
-    name: string;
-  } | null>(null);
-
-  const handleFileAction = (data: any) => {
-    if (data?.path && data.path.toLowerCase().endsWith('.json')) {
-      setSelectedJsonFile({
-        path: data.path,
-        name: data.path.split('/').pop() || 'unknown.json'
-      });
-    }
-  };
-
   return (
     <Authenticator>
       {({ signOut, user }) => (
@@ -39,23 +27,10 @@ function App() {
           </header>
           
           <main style={{ padding: '1rem' }}>
-            <StorageBrowser 
-              onActionStart={({ type, data }) => {
-                if (type === 'DOWNLOAD' && data?.path?.endsWith('.json')) {
-                  handleFileAction(data);
-                  return { cancel: true }; // Cancel the default download
-                }
-                return { cancel: false };
-              }}
-            />
-            
-            {selectedJsonFile && (
-              <JsonViewer
-                path={selectedJsonFile.path}
-                fileName={selectedJsonFile.name}
-                onClose={() => setSelectedJsonFile(null)}
-              />
-            )}
+            <StorageBrowser />
+            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f5f5f5' }}>
+              <p><strong>Note:</strong> To view JSON files inline, right-click on any .json file and select "View JSON" from the context menu (this feature requires the custom action implementation above).</p>
+            </div>
           </main>
         </div>
       )}
