@@ -1,52 +1,65 @@
 import React, { useState } from 'react';
-import { StorageBrowser } from '@aws-amplify/ui-react-storage';
-import JsonViewer from './components/JsonViewer';
 import { Amplify } from 'aws-amplify';
-import amplifyconfig from './amplifyconfiguration.json';
+import { StorageBrowser } from '@aws-amplify/ui-react-storage';
+import { Authenticator } from '@aws-amplify/ui-react';
+import JsonViewer from './components/JsonViewer';
+import outputs from '../amplify_outputs.json';
+import '@aws-amplify/ui-react/styles.css';
+import '@aws-amplify/ui-react-storage/storage-browser-styles.css';
 
-Amplify.configure(amplifyconfig);
+Amplify.configure(outputs);
 
 function App() {
   const [selectedJsonFile, setSelectedJsonFile] = useState<{
-    key: string;
+    path: string;
     name: string;
   } | null>(null);
 
-  const defaultPrefixes = [
-    'public/',
-    (identityId: string) => `protected/${identityId}/`,
-    (identityId: string) => `private/${identityId}/`,
-  ];
-
-  const handleFileClick = (file: any) => {
-    if (file.key && file.key.toLowerCase().endsWith('.json')) {
+  const handleFileAction = (data: any) => {
+    if (data?.path && data.path.toLowerCase().endsWith('.json')) {
       setSelectedJsonFile({
-        key: file.key,
-        name: file.key.split('/').pop() || 'unknown.json'
+        path: data.path,
+        name: data.path.split('/').pop() || 'unknown.json'
       });
     }
   };
 
   return (
-    <div className="App">
-      <StorageBrowser
-        defaultPrefixes={defaultPrefixes}
-        onActionStart={(details) => {
-          if (details.type === 'DOWNLOAD' && details.data?.key?.endsWith('.json')) {
-            handleFileClick(details.data);
-            return { cancel: true }; // Prevent default download
-          }
-        }}
-      />
-      
-      {selectedJsonFile && (
-        <JsonViewer
-          fileKey={selectedJsonFile.key}
-          fileName={selectedJsonFile.name}
-          onClose={() => setSelectedJsonFile(null)}
-        />
+    <Authenticator>
+      {({ signOut, user }) => (
+        <div className="App">
+          <header style={{ padding: '1rem', borderBottom: '1px solid #ccc' }}>
+            <h1>RADAR Project - File Browser</h1>
+            <div>
+              <span>Hello {user?.username}</span>
+              <button onClick={signOut} style={{ marginLeft: '1rem' }}>
+                Sign out
+              </button>
+            </div>
+          </header>
+          
+          <main style={{ padding: '1rem' }}>
+            <StorageBrowser 
+              onActionStart={({ type, data }) => {
+                if (type === 'DOWNLOAD' && data?.path?.endsWith('.json')) {
+                  handleFileAction(data);
+                  return { cancel: true }; // Cancel the default download
+                }
+                return { cancel: false };
+              }}
+            />
+            
+            {selectedJsonFile && (
+              <JsonViewer
+                path={selectedJsonFile.path}
+                fileName={selectedJsonFile.name}
+                onClose={() => setSelectedJsonFile(null)}
+              />
+            )}
+          </main>
+        </div>
       )}
-    </div>
+    </Authenticator>
   );
 }
 
