@@ -1,6 +1,7 @@
 import { defineBackend } from "@aws-amplify/backend";
 import { auth } from "./auth/resource";
 import { Policy, PolicyStatement, Effect } from "aws-cdk-lib/aws-iam";
+import { Bucket } from "aws-cdk-lib/aws-s3";
 
 /**
  * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
@@ -8,7 +9,7 @@ import { Policy, PolicyStatement, Effect } from "aws-cdk-lib/aws-iam";
 const backend = defineBackend({
   auth,
 });
-
+const customBucketStack = backend.createStack("custom-bucket-stack");
 /**
  * Note: This code assumes the existence of an S3 bucket named 'my-existing-bucket'.
  * Replace 'my-existing-bucket' with your actual bucket name and adjust the paths and permissions as needed.
@@ -23,6 +24,14 @@ const backend = defineBackend({
  * Note: Ensure the bucket exists before deploying this code, as it only sets up IAM policies and does not create the S3 bucket.
  */
 const customBucketName = "spineoutput";
+const region = "ap-southeast-1";
+
+
+// Import the existing S3 bucket
+const customBucket = Bucket.fromBucketAttributes(customBucketStack, "SpineOutputBucket", {
+  bucketArn: `arn:aws:s3:::${customBucketName}`,
+  region: region
+});
 
 backend.addOutput({
   version: "1.3",
