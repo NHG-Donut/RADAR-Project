@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Amplify } from 'aws-amplify';
 import { Authenticator } from '@aws-amplify/ui-react';
 import { createAmplifyAuthAdapter, createStorageBrowser } from '@aws-amplify/ui-react-storage/browser';
@@ -8,54 +9,21 @@ import '@aws-amplify/ui-react-storage/styles.css';
 
 Amplify.configure(outputs);
 
-// Create custom Storage Browser with JSON viewer action
 const { StorageBrowser } = createStorageBrowser({
   config: createAmplifyAuthAdapter(),
-  actions: {
-    custom: {
-      viewJson: {
-        actionListItem: {
-          icon: 'view' as any,
-          label: 'View JSON',
-          disable: (selected) => !selected?.some(item => item.key?.endsWith('.json')),
-        },
-        handler: async ({ key }) => {
-          return { 
-            result: Promise.resolve({ 
-              status: 'COMPLETE' as const, 
-              value: { key } 
-            }) 
-          };
-        },
-        viewName: 'ViewJsonView',
-      },
-    },
-  },
 });
 
-// Custom view for JSON display
-const ViewJsonView = () => {
-  const [selectedFile, setSelectedFile] = React.useState<{ path: string; name: string } | null>(null);
-  
-  React.useEffect(() => {
-    // Get selected file info from URL or state management
-    // This is simplified - you'd need to pass the selected file data
-  }, []);
-
-  if (selectedFile) {
-    return (
-      <JsonViewer
-        path={selectedFile.path}
-        fileName={selectedFile.name}
-        onClose={() => setSelectedFile(null)}
-      />
-    );
-  }
-
-  return <div>No JSON file selected</div>;
-};
-
 function App() {
+  const [selectedJsonFile, setSelectedJsonFile] = useState<{
+    path: string;
+    name: string;
+  } | null>(null);
+
+  const handleJsonFileClick = (path: string) => {
+    const fileName = path.split('/').pop() || 'unknown.json';
+    setSelectedJsonFile({ path, name: fileName });
+  };
+
   return (
     <Authenticator>
       {({ signOut, user }) => (
@@ -71,9 +39,73 @@ function App() {
           </header>
           
           <main style={{ padding: '1rem' }}>
-            <StorageBrowser 
-              views={{ ViewJsonView }}
-            />
+            <StorageBrowser />
+            
+            <div style={{ 
+              marginTop: '1rem', 
+              padding: '1rem', 
+              backgroundColor: '#f0f8ff',
+              border: '1px solid #ccc',
+              borderRadius: '4px'
+            }}>
+              <h3>JSON File Viewer</h3>
+              <p>To view JSON files inline, enter the file path below:</p>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Enter JSON file path (e.g., public/data.json)"
+                  style={{
+                    flex: 1,
+                    padding: '8px',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px'
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const target = e.target as HTMLInputElement;
+                      const path = target.value.trim();
+                      if (path.toLowerCase().endsWith('.json')) {
+                        handleJsonFileClick(path);
+                      } else {
+                        alert('Please enter a valid JSON file path ending with .json');
+                      }
+                    }
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+                    const path = input?.value.trim();
+                    if (path && path.toLowerCase().endsWith('.json')) {
+                      handleJsonFileClick(path);
+                    } else {
+                      alert('Please enter a valid JSON file path ending with .json');
+                    }
+                  }}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#007bff',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  View JSON
+                </button>
+              </div>
+              <small style={{ color: '#666', marginTop: '8px', display: 'block' }}>
+                Example paths: public/config.json, private/123abc/data.json
+              </small>
+            </div>
+            
+            {selectedJsonFile && (
+              <JsonViewer
+                path={selectedJsonFile.path}
+                fileName={selectedJsonFile.name}
+                onClose={() => setSelectedJsonFile(null)}
+              />
+            )}
           </main>
         </div>
       )}
