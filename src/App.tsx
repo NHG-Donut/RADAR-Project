@@ -1,15 +1,59 @@
 import { Amplify } from 'aws-amplify';
 import { Authenticator } from '@aws-amplify/ui-react';
 import { createAmplifyAuthAdapter, createStorageBrowser } from '@aws-amplify/ui-react-storage/browser';
+import JsonViewer from './components/JsonViewer';
 import outputs from '../amplify_outputs.json';
 import '@aws-amplify/ui-react/styles.css';
 import '@aws-amplify/ui-react-storage/styles.css';
 
 Amplify.configure(outputs);
 
+// Create custom Storage Browser with JSON viewer action
 const { StorageBrowser } = createStorageBrowser({
   config: createAmplifyAuthAdapter(),
+  actions: {
+    custom: {
+      viewJson: {
+        actionListItem: {
+          icon: 'view' as any,
+          label: 'View JSON',
+          disable: (selected) => !selected?.some(item => item.key?.endsWith('.json')),
+        },
+        handler: async ({ key }) => {
+          return { 
+            result: Promise.resolve({ 
+              status: 'COMPLETE' as const, 
+              value: { key } 
+            }) 
+          };
+        },
+        viewName: 'ViewJsonView',
+      },
+    },
+  },
 });
+
+// Custom view for JSON display
+const ViewJsonView = () => {
+  const [selectedFile, setSelectedFile] = React.useState<{ path: string; name: string } | null>(null);
+  
+  React.useEffect(() => {
+    // Get selected file info from URL or state management
+    // This is simplified - you'd need to pass the selected file data
+  }, []);
+
+  if (selectedFile) {
+    return (
+      <JsonViewer
+        path={selectedFile.path}
+        fileName={selectedFile.name}
+        onClose={() => setSelectedFile(null)}
+      />
+    );
+  }
+
+  return <div>No JSON file selected</div>;
+};
 
 function App() {
   return (
@@ -27,10 +71,9 @@ function App() {
           </header>
           
           <main style={{ padding: '1rem' }}>
-            <StorageBrowser />
-            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#f5f5f5' }}>
-              <p><strong>Note:</strong> To view JSON files inline, right-click on any .json file and select "View JSON" from the context menu (this feature requires the custom action implementation above).</p>
-            </div>
+            <StorageBrowser 
+              views={{ ViewJsonView }}
+            />
           </main>
         </div>
       )}
